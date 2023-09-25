@@ -29,4 +29,25 @@ class DaySummmaryApi(MercadoBitcoinApi):
     def _get_endpoint(self, date: datetime.date) -> str:
         return f"{self.base_endpoint}/{self.coin}/{self.type}/{date.year}/{date.month}/{date.day}"
 
-print(DaySummmaryApi(coin = "ETH").get_data(date=datetime.date(2023,8,15)))
+class tradesApi(MercadoBitcoinApi):
+    type =  "trades"
+
+    def _get_unix_epoch(self, date: datetime.datetime) -> int:
+        return int(date.timestamp())
+    
+    def _get_endpoint(self, date_from: datetime.datetime = None, date_to: datetime.datetime = None) -> str:
+        if date_from and not date_to:
+            unix_date_from = self._get_unix_epoch(date_from)
+            endpoint = f'{self.base_endpoint}/{self.coin}/{self.type}/{date_from}'    
+        elif date_from and date_to:
+            unix_date_from = self._get_unix_epoch(date_from)
+            unix_date_to = self._get_unix_epoch(date_to)
+            endpoint = f'{self.base_endpoint}/{self.coin}/{self.type}/{unix_date_from}/{unix_date_to}'
+        else:
+            endpoint = f'{self.base_endpoint}/{self.coin}/{self.type}'
+        
+        return endpoint
+
+print(tradesApi("BTC").get_data())
+# print(tradesApi("BTC").get_data(date_from=datetime.datetime(2022,5,1)))
+# print(tradesApi("BTC").get_data(date_from=datetime.datetime(2022,5,10), date_to=datetime.datetime(2022,5,11)))
