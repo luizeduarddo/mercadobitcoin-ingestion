@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import json
+import os
 from typing import List #Method Abstracte Base Class
 import requests
 import logging
@@ -59,10 +60,13 @@ class DataTypeNotSupportedForIngestionException(Exception):
 
 class DataWriter:
 
-    def __init__(self, filename: str) -> None:
-        self.filename = filename
+    def __init__(self, coin: str, api: str) -> None:
+        self.api = api
+        self.coin = coin        
+        self.filename = f'{self.api}/{self.coin}/{datetime.datetime.now()}.json'
     
     def _write_row(self, row: str) -> None:
+        os.makedirs(os.path.dirname(self.filename), exist_ok= True)
         with open(self.filename, "a") as f:
             f.write(row)
     
@@ -76,10 +80,24 @@ class DataWriter:
             raise DataTypeNotSupportedForIngestionException(data)
                 
 
-data = DaySummmaryApi("ETH").get_data(date=datetime.date(2023,9,22))
-writer = DataWriter("day_summary.json")
-writer.write(data)
+class DataIngestor(ABC):
+    def __init__(self, writer: DataWriter, coins: List[str], default_start_date: datetime.date) -> None:
+        self.default_start_date = default_start_date
+        self.coins = coins
+        self.writer = writer
+    
+    @abstractmethod
+    def ingest(self) -> None:
+        pass
 
-data = tradesApi("ETH").get_data()
-writer = DataWriter('trades.json')
-writer.write(data)
+class DaysummaryIngestor(DataIngestor):
+    def ingest(self) -> None:
+        date = self.default_start_date
+        if date < datetime.date.today():
+            for coin in self.coins:
+                api = DaySummmaryApi(coin=coin)
+                data = api.get_data(date=date)
+                self.writer(coin=coin, api=api.type).write(data)
+
+ingestor = DaysummaryIngestor(writer=DataWriter, coins=["BTC", "ETH","ADA", "SOL"], default_start_date=datetime.date(2023, 8, 25))
+ingestor.ingest()
