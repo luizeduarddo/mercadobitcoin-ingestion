@@ -47,7 +47,12 @@ class tradesApi(MercadoBitcoinApi):
             endpoint = f'{self.base_endpoint}/{self.coin}/{self.type}'
         
         return endpoint
+    
+class DataWriter:
 
-# print(tradesApi("BTC").get_data())
-# print(tradesApi("BTC").get_data(date_from=datetime.datetime(2022,5,1)))
-print(tradesApi("BTC").get_data(date_from=datetime.datetime(2022,5,10), date_to=datetime.datetime(2022,5,11)))
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+    
+    def _write_row(self, row: str) -> None:
+        with open(self.filename, "a") as f:
+            f.write(row)
